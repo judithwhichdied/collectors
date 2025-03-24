@@ -9,12 +9,12 @@ public class ResourceSpawner : Spawner<Resource>
   
     private void Start()
     {
-        _minPositionX = -6.6f;
-        _maxPositionX = 6.6f;
-        _minPositionZ = -6.6f;
-        _maxPositionZ = 6.6f;
-        _minRotationY = -208;
-        _maxRotationY = -73;
+        MinPositionX = -6.6f;
+        MaxPositionX = 6.6f;
+        MinPositionZ = -6.6f;
+        MaxPositionZ = 6.6f;
+        MinRotationY = -208;
+        MaxRotationY = -73;
 
         StartCoroutine(SpawnDelaying());
     }
@@ -22,14 +22,15 @@ public class ResourceSpawner : Spawner<Resource>
     protected override void OnGet(Resource @object)
     {
         @object.transform.position = new Vector3
-            (Random.Range(_minPositionX, _maxPositionX), @object.transform.position.y, Random.Range(_minPositionZ, _maxPositionZ));
+            (Random.Range(MinPositionX, MaxPositionX), @object.transform.position.y, Random.Range(MinPositionZ, MaxPositionZ));
 
         @object.transform.rotation = Quaternion.Euler
-            (_rotationX, Random.Range(_minRotationY, _maxRotationY), @object.transform.rotation.z);
+            (_rotationX, Random.Range(MinRotationY, MaxRotationY), @object.transform.rotation.z);
 
         @object.gameObject.SetActive(true);
 
         @object.Collected += ReleaseObject;
+        @object.IncorrectSpawned += ReleaseObject;
     }
 
     protected override void OnRelease(Resource @object)
@@ -37,6 +38,7 @@ public class ResourceSpawner : Spawner<Resource>
         @object.gameObject.SetActive(false);
 
         @object.Collected -= ReleaseObject;
+        @object.IncorrectSpawned -= ReleaseObject;
     }
 
     private IEnumerator SpawnDelaying()

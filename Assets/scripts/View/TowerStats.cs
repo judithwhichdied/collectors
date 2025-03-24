@@ -4,11 +4,11 @@ using UnityEngine;
 public class TowerStats : MonoBehaviour
 {
     [SerializeField] private Tower _tower;
-    [SerializeField] private TextMeshProUGUI _tmp;
+    [SerializeField] private TextMeshProUGUI _resourceCountView;
 
     private void Start()
     {
-        _tmp.text = _tower.GetResourcesCount().ToString();
+        ShowResourceCount();
     }
 
     private void OnEnable()
@@ -23,6 +23,6 @@ public class TowerStats : MonoBehaviour
 
     private void ShowResourceCount()
     {
-        _tmp.text = _tower.GetResourcesCount().ToString();
+        _resourceCountView.text = _tower.GetResourcesCount().ToString();
     }
 }

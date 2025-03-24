@@ -148,7 +148,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _tower: {fileID: -1527301988954925633}
-  _tmp: {fileID: 5604751393862222693}
+  _resourceCountView: {fileID: 5604751393862222693}
 --- !u!1 &6237289301129451031
 GameObject:
   m_ObjectHideFlags: 0
@@ -371,7 +371,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 400, y: 366.1, z: 400}
+  m_Size: {x: 200, y: 366.1, z: 200}
   m_Center: {x: 0, y: 182.54, z: 0}
 --- !u!114 &-1527301988954925633
 MonoBehaviour:
@@ -399,7 +399,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 86687d6758272844b81e260d4f512d17, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _objectPrefab: {fileID: -6503446169008672559, guid: d225488940877944184860a39461d69b,
+  ObjectPrefab: {fileID: -6503446169008672559, guid: d225488940877944184860a39461d69b,
     type: 3}
 --- !u!114 &1021605484451061924
 MonoBehaviour:

@@ -7,7 +7,7 @@ public class Resource : MonoBehaviour
 
     public event Action<Resource> Collected;
 
-    public event Action IncorrectSpawned;
+    public event Action<Resource> IncorrectSpawned;
 
     public bool Taked { get; private set; } = false;
 
@@ -16,6 +16,14 @@ public class Resource : MonoBehaviour
         Taked = false;
 
         transform.position = new Vector3(transform.position.x, _startPositionY, transform.position.z);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.TryGetComponent<DeadZone>(out _) && transform.parent == null)
+        {
+            IncorrectSpawned?.Invoke(this);
+        }
     }
 
     public void Picked()

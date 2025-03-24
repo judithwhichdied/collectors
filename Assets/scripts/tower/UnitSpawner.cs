@@ -9,23 +9,23 @@ public class UnitSpawner : Spawner<Unit>
 
     private void Start()
     {
-        _minPositionX = -3f;
-        _maxPositionX = -1.5f;
-        _minPositionZ = -3f;
-        _maxPositionZ = 2f;
-        _minRotationY = 0;
-        _maxRotationY = 360;
-        _poolCapacity = 3;
-        _poolMaxSize = 3;       
+        MinPositionX = -3f;
+        MaxPositionX = -1.5f;
+        MinPositionZ = -3f;
+        MaxPositionZ = 2f;
+        MinRotationY = 0;
+        MaxRotationY = 360;
+        PoolCapacity = 3;
+        PoolMaxSize = 3;       
     }
 
     protected override void OnGet(Unit @object)
     {
         @object.transform.position = new Vector3
-            (Random.Range(_minPositionX, _maxPositionX), @object.transform.position.y, Random.Range(_minPositionZ, _maxPositionZ));
+            (Random.Range(MinPositionX, MaxPositionX), @object.transform.position.y, Random.Range(MinPositionZ, MaxPositionZ));
 
         @object.transform.rotation = Quaternion.Euler
-            (@object.transform.rotation.x, Random.Range(_minRotationY, _maxRotationY), @object.transform.rotation.z);
+            (@object.transform.rotation.x, Random.Range(MinRotationY, MaxRotationY), @object.transform.rotation.z);
 
         @object.gameObject.SetActive(true);
 

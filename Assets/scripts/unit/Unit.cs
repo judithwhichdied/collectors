@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using DG.Tweening;
+using UnityEditor.iOS;
 
 public class Unit : MonoBehaviour
 {
@@ -9,14 +10,15 @@ public class Unit : MonoBehaviour
     private float _childMoveTime = 1f;
     private float _rotateSpeed = 180f;
 
-    public bool Busy { get; private set; } = false;
+    private Resource _targetResource;
 
     public event Action<Unit> Died;
     public event Action<Unit> ResourceTaked;
 
     public event Action Runned;
-    public event Action Stopped;
     public event Action Looted;
+
+    public bool Busy { get; private set; } = false;
 
     private void Start()
     {
@@ -25,20 +27,31 @@ public class Unit : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.TryGetComponent(out Resource resource))
+        if (other.gameObject.TryGetComponent(out Resource resource) && resource == _targetResource)
         {
             if (resource.transform.parent == null)
                 TakeResource(resource);
         }
     }
 
-    public void MoveToPoint(Vector3 position)
+    public void MoveToResource(Resource resource)
     {
         Busy = true;
 
-        transform.DOMove(position, _time);
+        _targetResource = resource;
 
-        SetDirection(position);
+        transform.DOMove(resource.transform.position, _time);
+
+        SetDirection(resource.transform.position);
+
+        Runned?.Invoke();
+    }
+
+    public void MoveToTower(Vector3 towerPosition)
+    {
+        transform.DOMove(towerPosition, _time);
+
+        SetDirection(towerPosition);
 
         Runned?.Invoke();
     }
@@ -46,8 +59,6 @@ public class Unit : MonoBehaviour
     public void UnBusy()
     {
         Busy = false;
-
-        Stopped?.Invoke();
     }
 
     private void SetDirection(Vector3 position)

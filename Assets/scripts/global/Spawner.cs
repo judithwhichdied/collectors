@@ -3,32 +3,32 @@ using UnityEngine.Pool;
 
 public abstract class Spawner<T> : MonoBehaviour where T : MonoBehaviour
 {
-    [SerializeField] protected T _objectPrefab;
+    [SerializeField] protected T ObjectPrefab;
 
-    protected ObjectPool<T> _pool;
+    protected ObjectPool<T> Pool;
 
-    protected float _minRotationY;
-    protected float _maxRotationY;
+    protected float MinRotationY;
+    protected float MaxRotationY;
 
-    protected float _minPositionX;
-    protected float _maxPositionX;
-    protected float _minPositionZ;
-    protected float _maxPositionZ;
+    protected float MinPositionX;
+    protected float MaxPositionX;
+    protected float MinPositionZ;
+    protected float MaxPositionZ;
 
-    protected int _poolCapacity = 3;
-    protected int _poolMaxSize = 3;
+    protected int PoolCapacity = 3;
+    protected int PoolMaxSize = 3;
 
     protected void Awake()
     {
-        _pool = new ObjectPool<T>
+        Pool = new ObjectPool<T>
             (
-                 createFunc: () => Instantiate(_objectPrefab),
+                 createFunc: () => Instantiate(ObjectPrefab),
                  actionOnGet: OnGet,
                  actionOnRelease: (@object) => OnRelease(@object),
                  actionOnDestroy: (@object) => Destroy(@object.gameObject),
                  collectionCheck: true,
-                 defaultCapacity: _poolCapacity,
-                 maxSize: _poolMaxSize
+                 defaultCapacity: PoolCapacity,
+                 maxSize: PoolMaxSize
             );
     }
 
@@ -38,11 +38,11 @@ public abstract class Spawner<T> : MonoBehaviour where T : MonoBehaviour
     
     public void Spawn()
     {
-        _pool.Get();
+        Pool.Get();
     }
 
     public void ReleaseObject(T @object)
     {
-        _pool.Release(@object);
+        Pool.Release(@object);
     }
 }

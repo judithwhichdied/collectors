@@ -10,11 +10,11 @@ public class Tower : MonoBehaviour
 
     private List<Resource> _resources = new List<Resource>();
     private List<Unit> _units = new List<Unit>();
-    private List<Rigidbody> _lootableResources = new List<Rigidbody>();
+    private List<Resource> _lootableResources = new List<Resource>();
 
     private int _startUnitCount = 3;
     private float _scannerDelay = 1f;
-    private float _unitDelay = 3f;
+    private float _unitDelay = 1.5f;
     private float _pointPositionZ = 1.5f;
 
     private Vector3 _towerPosition;
@@ -50,7 +50,14 @@ public class Tower : MonoBehaviour
         {
             _resources.Add(resource);
 
+            _lootableResources.Remove(resource);
+
             ResourceCountChanged?.Invoke();
+
+            if (resource.transform.parent != null && resource.transform.parent.TryGetComponent(out Unit unit))
+            {
+                unit.UnBusy();
+            }
 
             resource.transform.SetParent(null);
 
@@ -70,16 +77,14 @@ public class Tower : MonoBehaviour
 
     private void ReturnToTower(Unit unit)
     {
-        unit.MoveToPoint(_towerPosition);
-
-        StartCoroutine(DelayUnBusy(unit));
+        unit.MoveToTower(transform.position);
     }
 
     private void LootResources()
     {       
-        foreach (Rigidbody resource in _lootableResources)
+        foreach (Resource resource in _lootableResources)
         {
-            if (resource.GetComponent<Resource>().Taked)
+            if (resource.Taked)
                 continue;
 
             foreach (Unit unit in _units)
@@ -88,15 +93,11 @@ public class Tower : MonoBehaviour
                 {
                     unit.ResourceTaked += ReturnToTower;
 
-                    unit.MoveToPoint(resource.transform.position);
+                    unit.MoveToResource(resource);
 
-                    resource.GetComponent<Resource>().Picked();
+                    resource.Picked();
 
                     break;
-                }
-                else
-                {
-                    continue;
                 }
             }
         }      
@@ -108,18 +109,8 @@ public class Tower : MonoBehaviour
         {
             yield return new WaitForSeconds(_scannerDelay);
 
-            _lootableResources = _scanner.Scan();
+            _lootableResources.AddRange(_scanner.Scan());
         }
-    }
-
-    private IEnumerator DelayUnBusy(Unit unit)
-    {
-        while (unit.transform.position != _towerPosition)
-        {
-            yield return null;
-        }
-
-        unit.UnBusy();
     }
 
     private IEnumerator StartLooting()
