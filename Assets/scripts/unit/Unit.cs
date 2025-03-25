@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using DG.Tweening;
-using UnityEditor.iOS;
 
 public class Unit : MonoBehaviour
 {
@@ -9,21 +8,19 @@ public class Unit : MonoBehaviour
     private float _childPositionY = 1f;
     private float _childMoveTime = 1f;
     private float _rotateSpeed = 180f;
-
+   
     private Resource _targetResource;
 
     public event Action<Unit> Died;
     public event Action<Unit> ResourceTaked;
+    public event Action<Resource> TargetReceived;
 
     public event Action Runned;
     public event Action Looted;
+    public event Action Stopped;
 
     public bool Busy { get; private set; } = false;
-
-    private void Start()
-    {
-        Debug.Log(Busy);
-    }
+    public bool IsBuilder { get; private set; } = false;
 
     private void OnTriggerEnter(Collider other)
     {
@@ -36,22 +33,45 @@ public class Unit : MonoBehaviour
 
     public void MoveToResource(Resource resource)
     {
-        Busy = true;
+        if (IsBuilder == false)
+        {
+            Busy = true;
 
-        _targetResource = resource;
+            if (resource == null)
+            {
+                UnBusy();
+            }
+            else
+            {
+                _targetResource = resource;
 
-        transform.DOMove(resource.transform.position, _time);
+                TargetReceived?.Invoke(resource);
 
-        SetDirection(resource.transform.position);
+                transform.DOMove(resource.transform.position, _time).SetEase(Ease.Linear);
+
+                SetDirection(resource.transform.position);
+
+                Runned?.Invoke();
+            }                          
+        }
+    }
+
+    public void MoveToTower(Tower tower)
+    {
+        transform.DOMove(tower.transform.position, _time).SetEase(Ease.Linear);
+
+        SetDirection(tower.transform.position);
 
         Runned?.Invoke();
     }
 
-    public void MoveToTower(Vector3 towerPosition)
+    public void MoveToFlag(Flag flag)
     {
-        transform.DOMove(towerPosition, _time);
+        Busy = true;
 
-        SetDirection(towerPosition);
+        transform.DOMove(flag.transform.position, _time).SetEase(Ease.Linear);
+
+        SetDirection(flag.transform.position);
 
         Runned?.Invoke();
     }
@@ -59,6 +79,18 @@ public class Unit : MonoBehaviour
     public void UnBusy()
     {
         Busy = false;
+
+        Stopped?.Invoke();
+    }
+
+    public void SetUnitBuidler()
+    {
+        IsBuilder = true;
+    }
+
+    public void UnSetUnitBuilder()
+    {
+        IsBuilder = false;
     }
 
     private void SetDirection(Vector3 position)

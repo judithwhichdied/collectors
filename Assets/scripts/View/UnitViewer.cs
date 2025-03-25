@@ -15,12 +15,14 @@ public class UnitViewer : MonoBehaviour
     {
         _unit.Runned += AnimateRun;
         _unit.Looted += AnimateLooting;
+        _unit.Stopped += AnimateIdle;
     }
 
     private void OnDisable()
     {
         _unit.Runned -= AnimateRun;
         _unit.Looted -= AnimateLooting;
+        _unit.Stopped -= AnimateIdle;
     }
 
     private void AnimateRun()
@@ -32,6 +34,12 @@ public class UnitViewer : MonoBehaviour
     private void AnimateLooting()
     {
         StartCoroutine(LootingState());
+    }
+
+    private void AnimateIdle()
+    {
+        _animator.SetBool(Runned, false);
+        _animator.SetBool(Looted, false);
     }
 
     private IEnumerator LootingState()

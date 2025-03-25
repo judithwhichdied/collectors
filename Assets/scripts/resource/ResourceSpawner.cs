@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class ResourceSpawner : Spawner<Resource>
 {
-    private float _delay = 2f;
+    private float _delay = 1f;
 
     private float _rotationX = -120;
   
