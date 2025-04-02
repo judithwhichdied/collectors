@@ -2,18 +2,19 @@ using System;
 using UnityEngine;
 using DG.Tweening;
 
+[RequireComponent(typeof(UnitMover))]
 public class Unit : MonoBehaviour
 {
-    private float _time = 5f;
+    private UnitMover _mover;
+
+    private Resource _takedResource;
+
     private float _childPositionY = 1f;
     private float _childMoveTime = 1f;
-    private float _rotateSpeed = 180f;
-   
-    private Resource _targetResource;
-
-    public event Action<Unit> Died;
+  
     public event Action<Unit> ResourceTaked;
-    public event Action<Resource> TargetReceived;
+    public event Action<Unit, Resource> InTower;
+    public event Action OnFlagPosition;
 
     public event Action Runned;
     public event Action Looted;
@@ -22,15 +23,11 @@ public class Unit : MonoBehaviour
     public bool Busy { get; private set; } = false;
     public bool IsBuilder { get; private set; } = false;
 
-    private void OnTriggerEnter(Collider other)
+    private void Awake()
     {
-        if (other.gameObject.TryGetComponent(out Resource resource) && resource == _targetResource)
-        {
-            if (resource.transform.parent == null)
-                TakeResource(resource);
-        }
+        _mover = GetComponent<UnitMover>();
     }
-
+   
     public void MoveToResource(Resource resource)
     {
         if (IsBuilder == false)
@@ -43,24 +40,21 @@ public class Unit : MonoBehaviour
             }
             else
             {
-                _targetResource = resource;
-
-                TargetReceived?.Invoke(resource);
-
-                transform.DOMove(resource.transform.position, _time).SetEase(Ease.Linear);
-
-                SetDirection(resource.transform.position);
+                _mover.StartMoving(resource.transform, Take);
 
                 Runned?.Invoke();
             }                          
         }
-    }
 
+        void Take()
+        {
+            TakeResource(resource);
+        }
+    }
+ 
     public void MoveToTower(Tower tower)
     {
-        transform.DOMove(tower.transform.position, _time).SetEase(Ease.Linear);
-
-        SetDirection(tower.transform.position);
+        _mover.StartMoving(tower.transform, InBase);
 
         Runned?.Invoke();
     }
@@ -69,9 +63,7 @@ public class Unit : MonoBehaviour
     {
         Busy = true;
 
-        transform.DOMove(flag.transform.position, _time).SetEase(Ease.Linear);
-
-        SetDirection(flag.transform.position);
+        _mover.StartMoving(flag.transform, OnFlag);
 
         Runned?.Invoke();
     }
@@ -93,11 +85,14 @@ public class Unit : MonoBehaviour
         IsBuilder = false;
     }
 
-    private void SetDirection(Vector3 position)
+    private void OnFlag()
     {
-        Vector3 direction = (position - transform.position).normalized;
-        Quaternion toRotation = Quaternion.LookRotation(direction);
-        transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotation, _rotateSpeed);
+        OnFlagPosition?.Invoke();
+    }
+
+    private void InBase()
+    {
+        InTower?.Invoke(this, _takedResource);
     }
 
     private void TakeResource(Resource resource)
@@ -106,7 +101,9 @@ public class Unit : MonoBehaviour
 
         resource.transform.DOMoveY(_childPositionY, _childMoveTime);
 
+        _takedResource = resource;
+
         ResourceTaked?.Invoke(this);
         Looted?.Invoke();
-    }
+    }    
 }

@@ -31,16 +31,12 @@ public class UnitSpawner : Spawner<Unit>
 
         @object.gameObject.SetActive(true);
 
-        @object.Died += ReleaseObject;
-
         Spawned?.Invoke(@object);
     }
 
     protected override void OnRelease(Unit @object)
     {
         @object.gameObject.SetActive(false);
-
-        @object.Died -= ReleaseObject;
 
         Removed?.Invoke(@object);
     }

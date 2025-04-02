@@ -23,6 +23,6 @@ public class TowerStats : MonoBehaviour
 
     private void ShowResourceCount()
     {
-        _resourceCountView.text = _tower.GetResourcesCount().ToString();
+        _resourceCountView.text = _tower.ResourcesCount.ToString();
     }
 }

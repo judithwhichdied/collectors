@@ -9,29 +9,33 @@ public class Tower : MonoBehaviour
     [SerializeField] private Scanner _scanner;
     [SerializeField] private ResourceDataBase _database;
     [SerializeField] private Flag _flagPrefab;
-    [SerializeField] private Input _input;
-    [SerializeField] private Tower _towerPrefab;
+    [SerializeField] private FlagPlacer _placer;
+    [SerializeField] private TowerBuilder _builder;
 
     private List<Resource> _resources = new List<Resource>();
     private List<Unit> _units = new List<Unit>();
 
-    private int _startUnitCount = 3;
+    public int StartUnitCount = 3;
+
     private int _unitCost = 3;
     private float _unitDelay = 1.5f;
 
     private bool _priorityChanged = false;
 
-    private int _towerRotationY = 180;
-
     public event Action ResourceCountChanged;
+
+    public event Action<List<Resource>> Scanned;
 
     public bool FlagCreated { get; private set; } = false;
 
+    public int ResourcesCount => _resources.Count;
+
     private void Start()
     {
-        for (int i = 0; i < _startUnitCount; i++)
+        for (int i = 0; i < StartUnitCount; i++)
             _spawner.Spawn();
 
+        StartCoroutine(StartScanning());
         StartCoroutine(StartLooting());
     }
 
@@ -39,41 +43,14 @@ public class Tower : MonoBehaviour
     {
         _spawner.Spawned += AddUnit;
         _spawner.Removed += RemoveUnit;
-        _input.FlagPlaced += BuildNewTower;
+        _placer.FlagPlaced += BuildNewTower;
     }
 
     private void OnDisable()
     {
         _spawner.Spawned -= AddUnit;
         _spawner.Removed -= RemoveUnit;
-        _input.FlagPlaced -= BuildNewTower;
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.TryGetComponent(out Resource resource))
-        {           
-            if (resource.transform.parent != null && resource.transform.parent.TryGetComponent(out Unit unit) && TryFindUnit(unit))
-            {
-                _resources.Add(resource);
-
-                ResourceCountChanged?.Invoke();
-
-                resource.transform.SetParent(null);
-
-                resource.Looted();
-
-                _database.MakeResourceFree(resource);
-
-                unit.UnBusy();
-
-                if (_resources.Count >= 3 && _priorityChanged == false)
-                {
-                    SpawnNewUnit();
-                    SendResources(_unitCost);
-                }                
-            }           
-        }
+        _placer.FlagPlaced -= BuildNewTower;
     }
 
     public Flag CreateFlag()
@@ -89,9 +66,9 @@ public class Tower : MonoBehaviour
         return flag;
     }
 
-    public int GetResourcesCount()
+    public void AddUnit(Unit unit)
     {
-        return _resources.Count;
+        _units.Add(unit);
     }
 
     private void BuildNewTower(Flag flag)
@@ -117,19 +94,39 @@ public class Tower : MonoBehaviour
         _units.Remove(unit);
     }
 
-    private void AddUnit(Unit unit)
-    {
-        _units.Add(unit);
-    }
-
     private void ReturnToTower(Unit unit)
     {
         unit.MoveToTower(this);
+
+        unit.InTower += CollectResource;
+        unit.ResourceTaked -= ReturnToTower;
     }
 
     private void SpawnNewUnit()
     {
         _spawner.Spawn();
+    }
+
+    private void CollectResource(Unit unit, Resource resource)
+    {
+        _resources.Add(resource);
+
+        ResourceCountChanged?.Invoke();
+
+        resource.transform.SetParent(null);
+
+        resource.Looted();
+
+        _database.RemoveResource(resource);
+
+        unit.UnBusy();
+        unit.InTower -= CollectResource;
+
+        if (_resources.Count >= _unitCost && _priorityChanged == false)
+        {
+            SpawnNewUnit();
+            SendResources(_unitCost);
+        }
     }
 
     private void SendResources(int cost)
@@ -138,43 +135,47 @@ public class Tower : MonoBehaviour
 
         ResourceCountChanged?.Invoke();
     }
-
-    private bool TryFindUnit(Unit unit)
-    {
-        foreach (Unit minion in _units)
-        {
-            if (minion == unit)
-            {
-                return true;
-            }           
-        }
-
-        return false;
-    }
-
+   
     private void LootResources()
     {
-        foreach (Resource resource in _database.GetFreeResources())
+        if (_database.TryGetResources())
         {
-            if (resource.Taked)
-                continue;
+            Unit unit = TryGetUnit();
 
-            foreach (Unit unit in _units)
+            if (unit != null)
             {
-                if (unit.Busy == false && unit.IsBuilder == false)
-                {
-                    unit.ResourceTaked += ReturnToTower;
+                unit.ResourceTaked += ReturnToTower;
 
-                    unit.MoveToResource(resource);
-
-                    unit.TargetReceived += _database.MakeResourceBusy;
-
-                    resource.Picked();
-
-                    break;
-                }
+                unit.MoveToResource(_database.GetFreeResource());
             }
-        }      
+        }
+    }
+
+    private Unit TryGetUnit()
+    {
+        foreach(Unit unit in _units)
+        {
+            if (unit.Busy == false && unit.IsBuilder == false)
+                return unit;
+        }
+
+        return null;
+    }
+
+    private IEnumerator StartScanning()
+    {
+        WaitForSeconds wait = new WaitForSeconds(1);
+
+        List<Resource> resources = new List<Resource>();
+
+        while (enabled)
+        {
+            yield return wait;
+
+            resources = _scanner.Scan();
+
+            Scanned?.Invoke(resources);
+        }
     }
 
     private IEnumerator StartLooting()
@@ -202,28 +203,17 @@ public class Tower : MonoBehaviour
         }
 
         unit.MoveToFlag(flag);
-
+        unit.OnFlagPosition += Build;
+        
         SendResources(buildingCost);
 
-        while (unit.transform.position != flag.transform.position)
-        {
-            if (flag == null)
-                break;
-
-            yield return null;
-        }
-
-        Tower newTower = Instantiate(_towerPrefab, new Vector3(flag.transform.position.x, 0, flag.transform.position.z), Quaternion.Euler(0, _towerRotationY, 0));
-
-        Destroy(flag.gameObject);
-
         RemoveUnit(unit);
-
-        newTower.AddUnit(unit);
-
-        unit.UnBusy();
-        unit.UnSetUnitBuilder();
-
+       
         _priorityChanged = false;
+
+        void Build()
+        {
+            _builder.BuildTower(unit, flag);
+        };
     }
 }

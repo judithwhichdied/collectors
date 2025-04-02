@@ -4,21 +4,21 @@ using UnityEngine.InputSystem;
 
 public class FlagFollower : MonoBehaviour
 {
-    [SerializeField] private Input _input;
+    [SerializeField] private FlagPlacer _placer;
     [SerializeField] private Camera _camera;
 
     private bool _canFollow = true;
 
     private void OnEnable()
     {
-        _input.FlagPlaced += Stop;
-        _input.FlagTaked += Follow;
+        _placer.FlagPlaced += Stop;
+        _placer.FlagTaked += Follow;
     }
 
     private void OnDisable()
     {
-        _input.FlagPlaced -= Stop;
-        _input.FlagTaked -= Follow;
+        _placer.FlagPlaced -= Stop;
+        _placer.FlagTaked -= Follow;
     }
 
     private void Follow(Flag flag)

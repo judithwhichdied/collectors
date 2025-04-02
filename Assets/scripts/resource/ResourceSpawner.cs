@@ -6,6 +6,8 @@ public class ResourceSpawner : Spawner<Resource>
     private float _delay = 1f;
 
     private float _rotationX = -120;
+
+    private float _incorrectPosition = 2;
   
     private void Start()
     {
@@ -27,10 +29,16 @@ public class ResourceSpawner : Spawner<Resource>
         @object.transform.rotation = Quaternion.Euler
             (_rotationX, Random.Range(MinRotationY, MaxRotationY), @object.transform.rotation.z);
 
-        @object.gameObject.SetActive(true);
+        if (CheckPosition(@object))
+        {
+            @object.gameObject.SetActive(true);
 
-        @object.Collected += ReleaseObject;
-        @object.IncorrectSpawned += ReleaseObject;
+            @object.Collected += ReleaseObject;
+        }
+        else
+        {
+            ReleaseObject(@object);
+        }
     }
 
     protected override void OnRelease(Resource @object)
@@ -38,16 +46,25 @@ public class ResourceSpawner : Spawner<Resource>
         @object.gameObject.SetActive(false);
 
         @object.Collected -= ReleaseObject;
-        @object.IncorrectSpawned -= ReleaseObject;
+    }
+
+    private bool CheckPosition(Resource resource)
+    {
+        if (resource.transform.position.x <= _incorrectPosition && resource.transform.position.z <= _incorrectPosition)
+            return false;
+
+        return true;
     }
 
     private IEnumerator SpawnDelaying()
     {
+        WaitForSeconds wait = new WaitForSeconds(_delay);
+
         while(enabled)
         {
             Spawn();
 
-            yield return new WaitForSeconds(_delay);
+            yield return wait;
         }
     }
 }
