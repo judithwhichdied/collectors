@@ -2,42 +2,30 @@ using System;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class UnitSpawner : Spawner<Unit>
+public class UnitSpawner : MonoBehaviour
 {
+    [SerializeField] private Unit _unitPrefab;
+
     public event Action<Unit> Spawned;
-    public event Action<Unit> Removed;
 
-    private void Start()
+    private float _minPositionX = -3f;
+    private float _maxPositionX = -1.5f;
+    private float _minPositionZ = -3f;
+    private float _maxPositionZ = 2f;
+    private float _minRotationY = 0;
+    private float _maxRotationY = 360;
+
+    public void Spawn()
     {
-        MinPositionX = -3f;
-        MaxPositionX = -1.5f;
-        MinPositionZ = -3f;
-        MaxPositionZ = 2f;
-        MinRotationY = 0;
-        MaxRotationY = 360;
-        PoolCapacity = 3;
-        PoolMaxSize = 3;       
-    }
+        Unit unit;
 
-    protected override void OnGet(Unit @object)
-    {
-        @object.transform.position = new Vector3
-            (Random.Range(transform.position.x - MinPositionX, transform.position.x - MaxPositionX),
-            @object.transform.position.y,
-            Random.Range(transform.position.z - MinPositionZ, transform.position.z + MaxPositionZ));
+        unit = Instantiate(_unitPrefab,
+            new Vector3
+            (Random.Range(transform.position.x - _minPositionX, transform.position.x - _maxPositionX),
+            _unitPrefab.transform.position.y,
+            Random.Range(transform.position.z - _minPositionZ, transform.position.z + _maxPositionZ)),
+            Quaternion.Euler(_unitPrefab.transform.rotation.x, Random.Range(_minRotationY, _maxRotationY), _unitPrefab.transform.rotation.z));
 
-        @object.transform.rotation = Quaternion.Euler
-            (@object.transform.rotation.x, Random.Range(MinRotationY, MaxRotationY), @object.transform.rotation.z);
-
-        @object.gameObject.SetActive(true);
-
-        Spawned?.Invoke(@object);
-    }
-
-    protected override void OnRelease(Unit @object)
-    {
-        @object.gameObject.SetActive(false);
-
-        Removed?.Invoke(@object);
+        Spawned?.Invoke(unit);
     }
 }

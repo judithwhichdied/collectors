@@ -1,29 +1,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ResourceDataBase : MonoBehaviour
+public class ResourceDataBase
 {
-    [SerializeField] private Tower _tower;
-
     private List<Resource> _busyResources = new List<Resource>();
     private List<Resource> _freeResources = new List<Resource>();
 
-    private void OnEnable()
-    {
-        _tower.Scanned += SortResources;
-    }
-
-    private void OnDisable()
-    {
-        _tower.Scanned -= SortResources;
-    }
-
     public bool TryGetResources()
     {
-        if (_freeResources.Count > 0)
-            return true;
-
-        return false;
+        return _freeResources.Count > 0;
     }
 
     public Resource GetFreeResource()
@@ -46,7 +31,7 @@ public class ResourceDataBase : MonoBehaviour
         _busyResources.Remove(resource);
     }
 
-    private void SortResources(List<Resource> allResources)
+    public void SortResources(List<Resource> allResources)
     {
         foreach (Resource resource in allResources)
         {

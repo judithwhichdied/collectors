@@ -976,7 +976,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f086b0539c0559247bb7a806db527dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ObjectPrefab: {fileID: 4234758011485755911, guid: 8434ca8e707f2aa4d90a1fd7fdb8067f,
+  _resourcePrefab: {fileID: 4234758011485755911, guid: 8434ca8e707f2aa4d90a1fd7fdb8067f,
     type: 3}
 --- !u!114 &8911540598612450232
 MonoBehaviour:

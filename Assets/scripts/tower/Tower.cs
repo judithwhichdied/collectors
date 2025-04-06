@@ -6,25 +6,25 @@ using UnityEngine;
 public class Tower : MonoBehaviour
 {
     [SerializeField] private UnitSpawner _spawner;
-    [SerializeField] private Scanner _scanner;
-    [SerializeField] private ResourceDataBase _database;
+
     [SerializeField] private Flag _flagPrefab;
     [SerializeField] private FlagPlacer _placer;
     [SerializeField] private TowerBuilder _builder;
+    [SerializeField] private Scanner _scanner;
+
+    private ResourceDataBase _database;
 
     private List<Resource> _resources = new List<Resource>();
     private List<Unit> _units = new List<Unit>();
 
-    public int StartUnitCount = 3;
-
     private int _unitCost = 3;
-    private float _unitDelay = 1.5f;
+    private int _startUnitCount = 3;
+
+    private WaitForSeconds _wait = new WaitForSeconds(1.5f); 
 
     private bool _priorityChanged = false;
 
     public event Action ResourceCountChanged;
-
-    public event Action<List<Resource>> Scanned;
 
     public bool FlagCreated { get; private set; } = false;
 
@@ -32,34 +32,46 @@ public class Tower : MonoBehaviour
 
     private void Start()
     {
-        for (int i = 0; i < StartUnitCount; i++)
+        for (int i = 0; i < _startUnitCount; i++)
             _spawner.Spawn();
 
-        StartCoroutine(StartScanning());
         StartCoroutine(StartLooting());
     }
 
     private void OnEnable()
     {
         _spawner.Spawned += AddUnit;
-        _spawner.Removed += RemoveUnit;
-        _placer.FlagPlaced += BuildNewTower;
+        _placer.FlagPlaced += BuildTower;
     }
 
     private void OnDisable()
     {
         _spawner.Spawned -= AddUnit;
-        _spawner.Removed -= RemoveUnit;
-        _placer.FlagPlaced -= BuildNewTower;
+        _placer.FlagPlaced -= BuildTower;
+    }
+
+    private void OnDestroy()
+    {
+        _scanner.Scanned -= _database.SortResources;
+    }
+
+    public void Initialize(ResourceDataBase database, int startUnitCount)
+    {
+        _database = database;
+        _startUnitCount = startUnitCount;
+        _scanner.Scanned += _database.SortResources;
+    }
+
+    public void ChangeUnitCount(int newUnitCount = 0)
+    {
+        _startUnitCount = newUnitCount;
     }
 
     public Flag CreateFlag()
     {
         Flag flag;
 
-        Quaternion flagRotation = Quaternion.Euler(-90, 200, 0);
-
-        flag = Instantiate(_flagPrefab, transform.position, flagRotation);
+        flag = Instantiate(_flagPrefab, transform.position, _flagPrefab.transform.rotation);
 
         FlagCreated = true;
 
@@ -71,20 +83,22 @@ public class Tower : MonoBehaviour
         _units.Add(unit);
     }
 
-    private void BuildNewTower(Flag flag)
+    private void BuildTower(Flag flag)
     {
-        if (_units.Count > 1)
+        if (_units.Count <= 1)
         {
-            _priorityChanged = true;
+            return;
+        }
 
-            foreach (Unit unit in _units)
+        _priorityChanged = true;
+
+        foreach (Unit unit in _units)
+        {
+            if (unit.Busy)
             {
-                if (unit.Busy)
-                {
-                    StartCoroutine(StartBuilding(unit, flag));
+                StartCoroutine(StartBuilding(unit, flag));
 
-                    break;
-                }
+                break;
             }
         }
     }
@@ -96,7 +110,7 @@ public class Tower : MonoBehaviour
 
     private void ReturnToTower(Unit unit)
     {
-        unit.MoveToTower(this);
+        unit.MoveToTower(transform);
 
         unit.InTower += CollectResource;
         unit.ResourceTaked -= ReturnToTower;
@@ -162,27 +176,11 @@ public class Tower : MonoBehaviour
         return null;
     }
 
-    private IEnumerator StartScanning()
-    {
-        WaitForSeconds wait = new WaitForSeconds(1);
-
-        List<Resource> resources = new List<Resource>();
-
-        while (enabled)
-        {
-            yield return wait;
-
-            resources = _scanner.Scan();
-
-            Scanned?.Invoke(resources);
-        }
-    }
-
     private IEnumerator StartLooting()
     {
         while (enabled)
         {
-            yield return new WaitForSeconds(_unitDelay);
+            yield return _wait;
 
             LootResources();
         }
@@ -202,7 +200,7 @@ public class Tower : MonoBehaviour
             yield return null;
         }
 
-        unit.MoveToFlag(flag);
+        unit.MoveToFlag(flag.transform);
         unit.OnFlagPosition += Build;
         
         SendResources(buildingCost);
@@ -214,6 +212,7 @@ public class Tower : MonoBehaviour
         void Build()
         {
             _builder.BuildTower(unit, flag);
+            unit.OnFlagPosition -= Build;
         };
     }
 }

@@ -1,59 +1,91 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Pool;
 
-public class ResourceSpawner : Spawner<Resource>
+public class ResourceSpawner : MonoBehaviour
 {
+    [SerializeField] private Resource _resourcePrefab;
+
+    private ObjectPool<Resource> _pool;
+
     private float _delay = 1f;
 
     private float _rotationX = -120;
 
     private float _incorrectPosition = 2;
-  
+
+    private float _minRotationY = -208f;
+    private float _maxRotationY = -73f;
+    private float _minPositionX = -6.6f;
+    private float _maxPositionX = 6.6f;
+    private float _minPositionZ = -6.6f;
+    private float _maxPositionZ = 6.6f;
+
+    private int _poolCapacity = 3;
+    private int _poolMaxSize = 3;
+
+    private void Awake()
+    {
+        _pool = new ObjectPool<Resource>
+            (
+                 createFunc: () => Instantiate(_resourcePrefab),
+                 actionOnGet: OnGet,
+                 actionOnRelease: (@object) => OnRelease(@object),
+                 actionOnDestroy: (@object) => Destroy(@object.gameObject),
+                 collectionCheck: true,
+                 defaultCapacity: _poolCapacity,
+                 maxSize: _poolMaxSize
+            );
+    }
+
     private void Start()
     {
-        MinPositionX = -6.6f;
-        MaxPositionX = 6.6f;
-        MinPositionZ = -6.6f;
-        MaxPositionZ = 6.6f;
-        MinRotationY = -208;
-        MaxRotationY = -73;
-
         StartCoroutine(SpawnDelaying());
     }
 
-    protected override void OnGet(Resource @object)
+    private void ReleaseObject(Resource resource)
     {
-        @object.transform.position = new Vector3
-            (Random.Range(MinPositionX, MaxPositionX), @object.transform.position.y, Random.Range(MinPositionZ, MaxPositionZ));
+        _pool.Release(resource);
+    }
 
-        @object.transform.rotation = Quaternion.Euler
-            (_rotationX, Random.Range(MinRotationY, MaxRotationY), @object.transform.rotation.z);
+    private void OnGet(Resource resource)
+    {
+        resource.transform.position = new Vector3
+            (Random.Range(_minPositionX, _maxPositionX), resource.transform.position.y, Random.Range(_minPositionZ, _maxPositionZ));
 
-        if (CheckPosition(@object))
+        resource.transform.rotation = Quaternion.Euler
+            (_rotationX, Random.Range(_minRotationY, _maxRotationY), resource.transform.rotation.z);
+
+        if (TryGetCorrectPosition(resource))
         {
-            @object.gameObject.SetActive(true);
+            resource.gameObject.SetActive(true);
 
-            @object.Collected += ReleaseObject;
+            resource.Collected += ReleaseObject;
         }
         else
         {
-            ReleaseObject(@object);
+            ReleaseObject(resource);
         }
     }
 
-    protected override void OnRelease(Resource @object)
+    private void OnRelease(Resource resource)
     {
-        @object.gameObject.SetActive(false);
+        resource.gameObject.SetActive(false);
 
-        @object.Collected -= ReleaseObject;
+        resource.Collected -= ReleaseObject;
     }
 
-    private bool CheckPosition(Resource resource)
+    private bool TryGetCorrectPosition(Resource resource)
     {
         if (resource.transform.position.x <= _incorrectPosition && resource.transform.position.z <= _incorrectPosition)
             return false;
 
         return true;
+    }
+
+    private void Spawn()
+    {
+        _pool.Get();
     }
 
     private IEnumerator SpawnDelaying()

@@ -9,7 +9,10 @@ public class UnitViewer : MonoBehaviour
     [SerializeField] private Animator _animator;
     [SerializeField] private Unit _unit;
 
-    private float _delay = 0.5f;
+    private int _runned = Animator.StringToHash(Runned);
+    private int _looted = Animator.StringToHash(Looted);
+
+    private WaitForSeconds _wait = new WaitForSeconds(0.5f);
 
     private void OnEnable()
     {
@@ -27,8 +30,8 @@ public class UnitViewer : MonoBehaviour
 
     private void AnimateRun()
     {
-        _animator.SetBool(Runned, true);
-        _animator.SetBool(Looted, false);
+        _animator.SetBool(_runned, true);
+        _animator.SetBool(_looted, false);
     }
 
     private void AnimateLooting()
@@ -38,16 +41,16 @@ public class UnitViewer : MonoBehaviour
 
     private void AnimateIdle()
     {
-        _animator.SetBool(Runned, false);
-        _animator.SetBool(Looted, false);
+        _animator.SetBool(_runned, false);
+        _animator.SetBool(_looted, false);
     }
 
     private IEnumerator LootingState()
     {
-        _animator.SetBool(Looted, true);
+        _animator.SetBool(_looted, true);
 
-        yield return new WaitForSeconds(_delay);
+        yield return _wait;
 
-        _animator.SetBool(Looted, false);
+        _animator.SetBool(_looted, false);
     }
 }

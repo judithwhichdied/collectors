@@ -40,30 +40,25 @@ public class Unit : MonoBehaviour
             }
             else
             {
-                _mover.StartMoving(resource.transform, Take);
+                _mover.StartMoving(resource.transform, () => TakeResource(resource));
 
                 Runned?.Invoke();
             }                          
-        }
-
-        void Take()
-        {
-            TakeResource(resource);
-        }
+        }       
     }
  
-    public void MoveToTower(Tower tower)
+    public void MoveToTower(Transform towerPosition)
     {
-        _mover.StartMoving(tower.transform, InBase);
+        _mover.StartMoving(towerPosition, () => InTower?.Invoke(this, _takedResource));
 
         Runned?.Invoke();
     }
 
-    public void MoveToFlag(Flag flag)
+    public void MoveToFlag(Transform flagPosition)
     {
         Busy = true;
 
-        _mover.StartMoving(flag.transform, OnFlag);
+        _mover.StartMoving(flagPosition, () => OnFlagPosition?.Invoke());
 
         Runned?.Invoke();
     }
@@ -83,16 +78,6 @@ public class Unit : MonoBehaviour
     public void UnSetUnitBuilder()
     {
         IsBuilder = false;
-    }
-
-    private void OnFlag()
-    {
-        OnFlagPosition?.Invoke();
-    }
-
-    private void InBase()
-    {
-        InTower?.Invoke(this, _takedResource);
     }
 
     private void TakeResource(Resource resource)

@@ -1,9 +1,20 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System.Collections;
+using System;
 
 public class Scanner : MonoBehaviour
-{   
-    public List<Resource> Scan()
+{
+    private WaitForSeconds _wait = new WaitForSeconds(1f);
+
+    public event Action<List<Resource>> Scanned;
+
+    private void Start()
+    {
+        StartCoroutine(StartScanning());
+    }
+
+    private List<Resource> Scan()
     {
         float extentX = 7.5f;
 
@@ -20,5 +31,19 @@ public class Scanner : MonoBehaviour
         }
 
         return resources;
+    }
+
+    private IEnumerator StartScanning()
+    {
+        List<Resource> resources;
+
+        while (enabled)
+        {
+            yield return _wait;
+
+            resources = Scan();
+
+            Scanned?.Invoke(resources);
+        }
     }
 }
